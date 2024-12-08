@@ -184,14 +184,13 @@ class uAPI:
         """
         return HTTPResponse(data=_SWAGGER_UI_HTML, content_type="text/html")
 
-    async def _process_connection(self, connection: socket.socket):
+    async def _process_connection(self, reader, writer):
         """Processes a request on a new connection.
-
-        Args:
-            connection (socket.socket): The connection to process communication on.
         """
+
         try:
-            request = connection.recv(8 * 1024).decode("ASCII")
+            request = await reader.read(8 * 1024)
+            request = request.decode()
 
             lines = request.split("\r\n")
             method, path, _ = lines[0].split(" ")
@@ -279,19 +278,16 @@ class uAPI:
             if not isinstance(result, HTTPResponse):
                 result = HTTPResponse(data=result)
 
-            connection.send(result.to_HTTP())
-            connection.close()
+            writer.write(result.to_HTTP())
             return
 
         except HTTPError as e:
-            connection.send(e.to_HTTP())
-            connection.close()
+            writer.write(e.to_HTTP())
             return
         except Exception as e:
             error = HTTPError(500, str(e))
             print(e)
-            connection.send(error.to_HTTP())
-            connection.close()
+            writer.write(error.to_HTTP())
 
     async def run(self) -> None:
         """Runs the server while running is set to True. Also sets the running_variable to true.
@@ -299,34 +295,19 @@ class uAPI:
         Raises:
             Exception: If the server is already running..
         """
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        addr = socket.getaddrinfo("0.0.0.0", self.port)[0][-1]
-        self._socket.bind(addr)
-        self._socket.listen(5)
+        self.server = await asyncio.start_server(self._process_connection, "0.0.0.0", self.port)
 
         if self.running:
             raise Exception("The uAPI server is already running!")
         self.running = True
-        self._stopped = False
-        # this allows other tasks to run in the background
-        self._socket.setblocking(False)
-        while self.running:
-            try:
+
+        async with self.server:
+            while True:
                 gc.collect()
-                conn, addr = self._socket.accept()
-                print("Got a connection from %s" % str(addr))
-                asyncio.create_task(self._process_connection(conn))
                 await asyncio.sleep_ms(100)
-            except:
-                # allow task change
-                await asyncio.sleep_ms(100)
-        self._stopped = False
+        self.running = False
 
     async def stop(self) -> None:
         """Can be called as an blocking function that sets running to false and waits for the server to actually stop."""
+        await self.server.wait_closed()
         self.running = False
-        while not self._stopped:
-            await asyncio.sleep_ms(100)
-
-        self._socket.close()
-        self._socket = None
