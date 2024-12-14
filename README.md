@@ -8,24 +8,12 @@ If you have any questions, it is recommended to check the [examples directory](/
 
 Generally there are two possibilities to use this framework in your project:
 
-### prebuild
+### pipkin
 
-You can go to the releases page and check for the latest .mpy file. You can simply add this file on your controller and it will be used just as the package itself. This is the most efficient version to use uAPI, since it is precompiled bytecode.
+I recommend using [pipkin](https://github.com/aivarannamaa/pipkin) to install the package on your controller.
 
-### upip
-
-If your use-case allows it you can use uAPI with upip (only when the device has internet connection).
-
-```python3
-import upip
-upip.install("micropython-uAPI")
-```
-
-For your local port of micropython you can also call:
-
-```
-micropython -m upip install micropython-uAPI
-```
+`pipkin --port /dev/ttyACM0 instal
+l git+https://github.com/edmcman/uAPI`
 
 ### with code
 
