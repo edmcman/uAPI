@@ -293,7 +293,7 @@ class uAPI:
         """Runs the server while running is set to True. Also sets the running_variable to true.
 
         Raises:
-            Exception: If the server is already running..
+            Exception: If the server is already running.
         """
         self.server = await asyncio.start_server(self._process_connection, "0.0.0.0", self.port)
 
