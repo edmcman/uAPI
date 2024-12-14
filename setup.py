@@ -1,5 +1,4 @@
 from setuptools import setup
-import sdist_upip
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
@@ -9,7 +8,6 @@ with open("VERSION", encoding="utf-8") as f:
 
 
 setup(
-    cmdclass={"sdist": sdist_upip.sdist},
     name="micropython-uAPI",
     packages=["uAPI"],
     version=version,
